@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> FW - Fake Weather App</title>
+    <!-- BEGIN: Style Assets -->
+    <link rel="stylesheet" href="../stylesheets/style.css">
+    <!-- END: Style Assets -->
+    <!-- BEGIN: Script Assets -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- END: Script Assets -->
+</head>
+
+<body>
+    <div class="fw-container" id="fw-app" ref="isBodyReference">
+        <!-- BEGIN: Search Input -->
+        <div class="fw-input-container">
+            <input type="text" class="fw-input" placeholder="Enter city name" 
+                v-model="isSearchQuery"
+                @keypress="isSelected = false">
+        </div>
+        <!-- END: Search Input -->
+        <!-- BEGIN: Search Result -->
+        <div class="fw-search-result" v-if="isCityAutoComplete">
+            <li class="fw-result" 
+                v-if="! isSelected" 
+                v-for="(city, index) in isCityAutoComplete"
+                :key="index"
+                @click="isSearchQuery = index; isSelected = true"> {{ index }} 
+            </li>
+        </div>
+        <!-- END: Search Result -->
+        <!-- BEGIN: Weather Card -->
+        <div class="fw-weather-container" v-if="isSelected">
+            <h1> {{ isSelectedCityWeather.city }} </h1>
+            <div class="fw-icon-container">
+                <img :src="'../images/icons/'+isSelectedCityWeather.weather[0].icon + '.png'" alt="">
+                {{ isSelectedCityWeather.temp + ' °C'}}
+            </div>
+            <span> It has {{ isSelectedCityWeather.weather[0].description }} </span>
+            <h2> Other Weather Info </h2>
+            <div class="fw-weather-info">
+                <div class="fw-infos">
+                    <span class="fw-info-title"> Feels </span>
+                    <span class="fw-info"> {{ isSelectedCityWeather.feels_like + ' °C' }} </span>
+                </div>
+                <div class="fw-infos">
+                    <span class="fw-info-title"> Humidity </span>
+                    <span class="fw-info"> {{ isSelectedCityWeather.humidity + '%' }} </span>
+                </div>
+                <div class="fw-infos">
+                    <span class="fw-info-title"> Pressure </span>
+                    <span class="fw-info"> {{ isSelectedCityWeather.pressure + 'hPa'}} </span>
+                </div>
+                <div class="fw-infos">
+                    <span class="fw-info-title"> Wind </span>
+                    <span class="fw-info"> {{ isSelectedCityWeather.wind_speed + 'm/s WNW'}} </span>
+                </div>
+            </div>
+        </div>
+        <!-- End: Weather Card -->
+    </div>
+    <script>
+        window.vue = new Vue({
+            el: '#fw-app',
+            data: {
+                isSearchQuery: '',
+                isSelected: false,
+                isCityAutoComplete: [],
+                isSelectedCityWeather: []
+            },
+            watch: {
+                isSearchQuery(isQuery) {
+                    if (isQuery) {
+                        axios.get('/api/weathers?isSearchQuery=' + isQuery)
+                            .then((isSearchResult) => {
+                                this.isCityAutoComplete = isSearchResult.data
+                            })
+                            .catch((isError) => {
+                                console.log(isError)
+                            })
+                        if (this.isSelected) {
+                            this.isSelectedCityWeather = this.isCityAutoComplete[this.isSearchQuery][0]
+
+                            if (this.isSelectedCityWeather) {
+                                var isComputedClass = ''
+                                if (this.isSelectedCityWeather.weather[0].main == 'Clear')
+                                    isComputedClass = 'fw-clear'
+                                if (this.isSelectedCityWeather.weather[0].main == 'Rain')
+                                    isComputedClass = 'fw-rain'
+                                if (this.isSelectedCityWeather.weather[0].main == 'Clouds')
+                                    isComputedClass = 'fw-cloud'
+
+                                this.$refs.isBodyReference.classList = [ 'fw-container ' +isComputedClass]
+                            }
+                        }
+                    } else {
+                        this.isCityAutoComplete = ''
+                    }
+
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
